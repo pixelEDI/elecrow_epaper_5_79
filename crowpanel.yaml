@@ -1,0 +1,180 @@
+esphome:
+  name: crowpanel_epaper
+  friendly_name: "CrowPanel E-Paper"
+  on_boot:
+    - priority: 600
+      then:
+        - switch.turn_on: epd_power
+        - delay: 500ms
+
+external_components:
+  - source:
+      type: git
+      url: https://github.com/ESPboards/esphome-lvgl-crowpanel-epaper-5.79-4.2
+    components: [crowpanel_epaper]
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: esp-idf
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+logger:
+
+api:
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+sensor:
+  - platform: homeassistant
+    id: dummy_temperature
+    entity_id: input_number.dummy_temperatur
+    on_value:
+      - lvgl.label.update:
+          id: page_3_temperature
+          text: !lambda |-
+            return str_sprintf("%.1f °C", x);
+
+switch:
+  - platform: gpio
+    pin: 7
+    id: epd_power
+    restore_mode: ALWAYS_ON
+    internal: true
+
+binary_sensor:
+  - platform: gpio
+    id: rotary_up
+    pin:
+      number: 6
+      mode: INPUT_PULLUP
+      inverted: true
+    on_press:
+      - lvgl.page.next:
+
+  - platform: gpio
+    id: rotary_down
+    pin:
+      number: 4
+      mode: INPUT_PULLUP
+      inverted: true
+    on_press:
+      - lvgl.page.previous:
+
+  - platform: gpio
+    id: rotary_press
+    pin:
+      number: 5
+      mode: INPUT_PULLUP
+      inverted: true
+
+display:
+  - platform: crowpanel_epaper
+    id: epd
+    model: "5.79in"
+    clk_pin: 12
+    mosi_pin: 11
+    cs_pin: 45
+    dc_pin: 46
+    reset_pin: 47
+    busy_pin: 48
+    invert_colors: true
+    full_update_every: 9999
+    auto_clear_enabled: false
+    update_interval: never
+
+image:
+  - file: "archlinux-logo-display.png"
+    id: archlinux_logo
+    type: BINARY
+    resize: 792x272
+
+lvgl:
+  displays: epd
+  buffer_size: 25%
+  color_depth: 16
+  page_wrap: false
+  on_draw_end:
+    component.update: epd
+  pages:
+    - id: main_page
+      bg_color: 0xFFFFFF
+      widgets:
+        - obj:
+            width: 100%
+            height: 100%
+            bg_color: 0xFFFFFF
+            border_width: 0
+            on_swipe_left:
+              - lvgl.page.next:
+            on_swipe_right:
+              - lvgl.page.previous:
+            widgets:
+              - label:
+                  align: CENTER
+                  text: "Hallo pixeledi"
+                  text_color: 0x000000
+                  text_font: MONTSERRAT_48
+              - label:
+                  align: BOTTOM_MID
+                  y: -2
+                  text: "1 / 3"
+                  text_color: 0x000000
+                  text_font: MONTSERRAT_16
+
+    - id: page_2
+      bg_color: 0xFFFFFF
+      widgets:
+        - obj:
+            width: 100%
+            height: 100%
+            bg_color: 0xFFFFFF
+            border_width: 0
+            on_swipe_left:
+              - lvgl.page.next:
+            on_swipe_right:
+              - lvgl.page.previous:
+            widgets:
+              - label:
+                  align: CENTER
+                  text: ""
+              - image:
+                  align: CENTER
+                  src: archlinux_logo
+              - label:
+                  align: BOTTOM_MID
+                  y: -2
+                  text: "2 / 3"
+                  text_color: 0x000000
+                  text_font: MONTSERRAT_16
+
+    - id: page_3
+      bg_color: 0xFFFFFF
+      widgets:
+        - obj:
+            width: 100%
+            height: 100%
+            bg_color: 0xFFFFFF
+            border_width: 0
+            on_swipe_left:
+              - lvgl.page.next:
+            on_swipe_right:
+              - lvgl.page.previous:
+            widgets:
+              - label:
+                  id: page_3_temperature
+                  align: CENTER
+                  text: "--.- °C"
+                  text_color: 0x000000
+                  text_font: MONTSERRAT_48
+              - label:
+                  align: BOTTOM_MID
+                  y: -2
+                  text: "3 / 3"
+                  text_color: 0x000000
+                  text_font: MONTSERRAT_16
