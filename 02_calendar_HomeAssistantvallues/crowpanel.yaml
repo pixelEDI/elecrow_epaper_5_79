@@ -1,0 +1,1006 @@
+esphome:
+  name: crowpanel_epaper
+  friendly_name: "CrowPanel E-Paper"
+  on_boot:
+    - priority: 600
+      then:
+        - switch.turn_on: epd_power
+        - delay: 500ms
+        - delay: 10s
+        - script.execute: request_ha_update
+external_components:
+  - source:
+      type: git
+      url: https://github.com/ESPboards/esphome-lvgl-crowpanel-epaper-5.79-4.2
+    components: [crowpanel_epaper]
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: esp-idf
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+font:
+  - file: "fonts/NimbusSans-Bold.otf"
+    id: room_font_bold
+    size: 18
+    bpp: 1
+    glyphsets: []
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+      - "ÄÖÜäöüß°–…"
+  - file: "fonts/NimbusSans-Regular.otf"
+    id: calendar_font_14
+    size: 14
+    bpp: 1
+    glyphsets: []
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+      - "ÄÖÜäöüß°–…"
+  - file: "fonts/NimbusSans-Regular.otf"
+    id: calendar_font_16
+    size: 16
+    bpp: 1
+    glyphsets: []
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+      - "ÄÖÜäöüß°–…"
+  - file: "fonts/NimbusSans-Regular.otf"
+    id: calendar_font_24
+    size: 24
+    bpp: 1
+    glyphsets: []
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+      - "ÄÖÜäöüß°–…"
+  - file: "fonts/NimbusSans-Regular.otf"
+    id: calendar_font_28
+    size: 28
+    bpp: 1
+    glyphsets: []
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+      - "ÄÖÜäöüß°–…"
+  - file: "fonts/NimbusSans-Regular.otf"
+    id: calendar_font_32
+    size: 32
+    bpp: 1
+    glyphsets: []
+    glyphs:
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+      - "ÄÖÜäöüß°–…"
+
+logger:
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+time:
+  - platform: homeassistant
+    id: ha_time
+
+interval:
+  - interval: 30s
+    then:
+      - lambda: |-
+          if (!id(ha_time).now().is_valid()) return;
+          const std::string text = "Aktualisiert: " + id(ha_time).now().strftime("%d.%m.%Y %H:%M:%S");
+          lv_label_set_text(id(calendar_updated), text.c_str());
+          lv_label_set_text(id(room_updated), text.c_str());
+
+sensor:
+  - platform: homeassistant
+    id: temp_1_temperature
+    entity_id: sensor.temp_1_temperature
+    on_value:
+      - lvgl.label.update:
+          id: room_1_temperature
+          text: !lambda 'return str_sprintf("%.1f °C", x);'
+  - platform: homeassistant
+    id: temp_1_humidity
+    entity_id: sensor.temp_1_humidity
+    on_value:
+      - script.execute:
+          id: room_apply_humidity
+          room: 1
+          humidity: !lambda 'return x;'
+  - platform: homeassistant
+    id: temp_2_temperature
+    entity_id: sensor.temp_2_temperature
+    on_value:
+      - lvgl.label.update:
+          id: room_2_temperature
+          text: !lambda 'return str_sprintf("%.1f °C", x);'
+  - platform: homeassistant
+    id: temp_2_humidity
+    entity_id: sensor.temp_2_humidity
+    on_value:
+      - script.execute:
+          id: room_apply_humidity
+          room: 2
+          humidity: !lambda 'return x;'
+  - platform: homeassistant
+    id: temp_3_temperature
+    entity_id: sensor.temp_3_temperature
+    on_value:
+      - lvgl.label.update:
+          id: room_3_temperature
+          text: !lambda 'return str_sprintf("%.1f °C", x);'
+  - platform: homeassistant
+    id: temp_3_humidity
+    entity_id: sensor.temp_3_humidity
+    on_value:
+      - script.execute:
+          id: room_apply_humidity
+          room: 3
+          humidity: !lambda 'return x;'
+  - platform: homeassistant
+    id: temp_4_temperature
+    entity_id: sensor.temp_4_temperature
+    on_value:
+      - lvgl.label.update:
+          id: room_4_temperature
+          text: !lambda 'return str_sprintf("%.1f °C", x);'
+  - platform: homeassistant
+    id: temp_4_humidity
+    entity_id: sensor.temp_4_humidity
+    on_value:
+      - script.execute:
+          id: room_apply_humidity
+          room: 4
+          humidity: !lambda 'return x;'
+  - platform: homeassistant
+    id: temp_5_temperature
+    entity_id: sensor.temp_5_temperature
+    on_value:
+      - lvgl.label.update:
+          id: room_5_temperature
+          text: !lambda 'return str_sprintf("%.1f °C", x);'
+  - platform: homeassistant
+    id: temp_5_humidity
+    entity_id: sensor.temp_5_humidity
+    on_value:
+      - script.execute:
+          id: room_apply_humidity
+          room: 5
+          humidity: !lambda 'return x;'
+  - platform: homeassistant
+    id: temp_6_temperature
+    entity_id: sensor.temp_6_temperature
+    on_value:
+      - lvgl.label.update:
+          id: room_6_temperature
+          text: !lambda 'return str_sprintf("%.1f °C", x);'
+  - platform: homeassistant
+    id: temp_6_humidity
+    entity_id: sensor.temp_6_humidity
+    on_value:
+      - script.execute:
+          id: room_apply_humidity
+          room: 6
+          humidity: !lambda 'return x;'
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+http_request:
+  timeout: 10s
+  verify_ssl: true
+
+switch:
+  - platform: gpio
+    pin: 7
+    id: epd_power
+    restore_mode: ALWAYS_ON
+    internal: true
+
+binary_sensor:
+  - platform: gpio
+    id: rotary_up
+    pin:
+      number: 6
+      mode: INPUT_PULLUP
+      inverted: true
+    on_press:
+      - lvgl.page.next:
+
+  - platform: gpio
+    id: rotary_down
+    pin:
+      number: 4
+      mode: INPUT_PULLUP
+      inverted: true
+    on_press:
+      - lvgl.page.previous:
+
+  - platform: gpio
+    id: rotary_press
+    pin:
+      number: 5
+      mode: INPUT_PULLUP
+      inverted: true
+    on_press:
+      - script.execute: request_ha_update
+
+display:
+  - platform: crowpanel_epaper
+    id: epd
+    model: "5.79in"
+    clk_pin: 12
+    mosi_pin: 11
+    cs_pin: 45
+    dc_pin: 46
+    reset_pin: 47
+    busy_pin: 48
+    invert_colors: true
+    full_update_every: 9999
+    auto_clear_enabled: false
+    update_interval: never
+
+# Shared entry point for embedded test data and later an HTTP response body.
+json:
+
+script:
+  - id: request_calendar
+    then:
+      - http_request.get:
+          url: !secret calendar_url
+          request_headers:
+            x-api-key: !secret calendar_api_key
+          capture_response: true
+          max_response_buffer_size: 4096
+          on_response:
+            then:
+              - if:
+                  condition:
+                    lambda: return response->status_code == 200;
+                  then:
+                    - script.execute:
+                        id: calendar_apply_json
+                        payload: !lambda return body;
+
+  - id: request_ha_update
+    then:
+      - homeassistant.service:
+          service: homeassistant.update_entity
+          data:
+            entity_id: sensor.temp_1_temperature,sensor.temp_1_humidity,sensor.temp_2_temperature,sensor.temp_2_humidity,sensor.temp_3_temperature,sensor.temp_3_humidity,sensor.temp_4_temperature,sensor.temp_4_humidity,sensor.temp_5_temperature,sensor.temp_5_humidity,sensor.temp_6_temperature,sensor.temp_6_humidity
+      - script.execute: request_calendar
+
+  - id: room_apply_humidity
+    parameters:
+      room: int
+      humidity: float
+    then:
+      - lambda: |-
+          lv_obj_t *labels[] = {id(room_1_humidity), id(room_2_humidity), id(room_3_humidity), id(room_4_humidity), id(room_5_humidity), id(room_6_humidity)};
+          if (room < 1 || room > 6) return;
+          auto *label = labels[room - 1];
+          const bool valid = std::isfinite(humidity) && humidity >= 0.0f && humidity <= 100.0f;
+          const bool high = valid && humidity > 60.0f;
+          if (valid) lv_label_set_text(label, str_sprintf("%.1f %%", humidity).c_str());
+          else lv_label_set_text(label, "-- %");
+          lv_obj_set_style_bg_color(label, lv_color_hex(high ? 0x000000 : 0xFFFFFF), LV_PART_MAIN);
+          lv_obj_set_style_bg_opa(label, LV_OPA_COVER, LV_PART_MAIN);
+          lv_obj_set_style_text_color(label, lv_color_hex(high ? 0xFFFFFF : 0x000000), LV_PART_MAIN);
+
+  - id: calendar_apply_json
+    parameters:
+      payload: string
+    then:
+      - lambda: |-
+          json::parse_json(payload, [](JsonObject root) -> bool {
+            ArduinoJson::DynamicJsonDocument normalized(8192);
+            JsonArray events = normalized["events"].to<JsonArray>();
+            if (root["events"].is<JsonArray>()) {
+              for (JsonObject source : root["events"].as<JsonArray>()) {
+                JsonObject event = events.createNestedObject();
+                event["date"] = source["date"] | "";
+                event["time"] = source["time"] | "";
+                event["title"] = source["title"] | "";
+              }
+            } else if (root["termine"].is<JsonArray>()) {
+              auto format_date = [](const std::string &iso) {
+                const int year = std::stoi(iso.substr(0, 4));
+                const int month = std::stoi(iso.substr(5, 2));
+                const int day = std::stoi(iso.substr(8, 2));
+                static const int month_offsets[] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
+                int adjusted_year = year - (month < 3 ? 1 : 0);
+                const int weekday = (adjusted_year + adjusted_year / 4 - adjusted_year / 100 + adjusted_year / 400 + month_offsets[month - 1] + day) % 7;
+                static const char *weekday_names[] = {"So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"};
+                return std::string(weekday_names[weekday]) + ", " + iso.substr(8, 2) + "." + iso.substr(5, 2) + ".";
+              };
+              for (JsonObject source : root["termine"].as<JsonArray>()) {
+                const std::string start = source["start"] | "";
+                if (start.size() < 16) continue;
+                JsonObject event = events.createNestedObject();
+                event["date"] = format_date(start);
+                event["time"] = (source["ganztaegig"] | false) ? "Ganztägig" : start.substr(11, 5);
+                event["title"] = source["titel"] | "";
+              }
+            } else return false;
+            // Validate before replacing the currently displayed data.
+            for (JsonObject event : events) {
+              if (!event["date"].is<const char *>() ||
+                  !event["time"].is<const char *>() ||
+                  !event["title"].is<const char *>()) return false;
+            }
+            lv_obj_t *meta[] = {id(event_0_meta), id(event_1_meta), id(event_2_meta), id(event_3_meta), id(event_4_meta)};
+            lv_obj_t *titles[] = {id(event_0_title), id(event_1_title), id(event_2_title), id(event_3_title), id(event_4_title)};
+            lv_obj_t *blocks[] = {id(event_0_block), id(event_1_block), id(event_2_block), id(event_3_block), id(event_4_block)};
+            lv_obj_t *times[] = {id(event_0_time), id(event_1_time), id(event_2_time), id(event_3_time), id(event_4_time)};
+            // U+00AD marks allowed syllable boundaries; only render a hyphen at a wrap.
+            auto wrap_title = [](const std::string &text, lv_obj_t *label) {
+              const auto *font = lv_obj_get_style_text_font(label, LV_PART_MAIN);
+              const auto spacing = lv_obj_get_style_text_letter_space(label, LV_PART_MAIN);
+              const int width = 240;
+              auto fits = [&](const std::string &value) {
+                lv_point_t size;
+                lv_text_get_size(&size, value.c_str(), font, spacing, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
+                return size.x <= width;
+              };
+              std::string result, line;
+              auto newline = [&]() {
+                if (!result.empty()) result += "\n";
+                result += line;
+                line.clear();
+              };
+              size_t start = 0;
+              while (start < text.size()) {
+                size_t end = text.find_first_of(" \n", start);
+                if (end == std::string::npos) end = text.size();
+                std::string word;
+                std::vector<size_t> breaks;
+                for (size_t j = start; j < end; j++) {
+                  if (text.compare(j, 2, "\xC2\xAD") == 0) {
+                    breaks.push_back(word.size());
+                    j++;
+                  } else word += text[j];
+                }
+                while (!word.empty()) {
+                  std::string prefix = line.empty() ? "" : line + " ";
+                  if (fits(prefix + word)) { line = prefix + word; break; }
+                  size_t split = 0;
+                  for (size_t pos : breaks)
+                    if (pos > 0 && pos < word.size() && fits(prefix + word.substr(0, pos) + "-")) split = pos;
+                  if (split != 0) {
+                    line = prefix + word.substr(0, split) + "-";
+                    newline();
+                    word.erase(0, split);
+                    std::vector<size_t> remaining;
+                    for (size_t pos : breaks) if (pos > split) remaining.push_back(pos - split);
+                    breaks = remaining;
+                  } else if (!line.empty()) newline();
+                  else { line = word; break; } // LVGL wraps unmarked oversized words.
+                }
+                if (end < text.size() && text[end] == '\n') newline();
+                start = end + 1;
+              }
+              if (!line.empty()) newline();
+              return result;
+            };
+            // Group by date, preserving the supplied order of days and appointments.
+            std::vector<JsonObject> ordered;
+            std::vector<std::string> days;
+            for (JsonObject event : events) {
+              std::string day = event["date"].as<const char *>();
+              bool seen = false;
+              for (const auto &existing : days) if (existing == day) seen = true;
+              if (!seen) days.push_back(day);
+            }
+            for (const auto &day : days)
+              for (JsonObject event : events)
+                if (day == event["date"].as<const char *>()) ordered.push_back(event);
+            std::string previous_day;
+            for (size_t i = 0; i < 5; i++) {
+              if (i < ordered.size() || (i == 0 && events.size() == 0))
+                lv_obj_clear_flag(blocks[i], LV_OBJ_FLAG_HIDDEN);
+              else lv_obj_add_flag(blocks[i], LV_OBJ_FLAG_HIDDEN);
+              std::string heading;
+              std::string title;
+              std::string time;
+              if (i < ordered.size()) {
+                heading = ordered[i]["date"].as<const char *>();
+                time = ordered[i]["time"].as<const char *>();
+                title = ordered[i]["title"].as<const char *>();
+              } else if (i == 0) {
+                title = "Keine Termine";
+              }
+              if (heading.empty() || heading == previous_day)
+                lv_obj_add_flag(meta[i], LV_OBJ_FLAG_HIDDEN);
+              else lv_obj_clear_flag(meta[i], LV_OBJ_FLAG_HIDDEN);
+              previous_day = heading;
+              lv_label_set_text(meta[i], heading.c_str());
+              lv_label_set_text(times[i], time.c_str());
+              if (time.empty()) lv_obj_add_flag(times[i], LV_OBJ_FLAG_HIDDEN);
+              else lv_obj_clear_flag(times[i], LV_OBJ_FLAG_HIDDEN);
+              title = wrap_title(title, titles[i]);
+              lv_label_set_text(titles[i], title.c_str());
+            }
+            return true;
+          });
+
+lvgl:
+  rotation: 90
+  displays: epd
+  buffer_size: 25%
+  color_depth: 16
+  page_wrap: false
+  on_draw_end:
+    component.update: epd
+  pages:
+    - id: main_page
+      bg_color: 0xFFFFFF
+      text_color: 0x000000
+      scrollbar_mode: "OFF"
+      widgets:
+        - label:
+            align: TOP_MID
+            y: 20
+            text: "TRAUMHAUS"
+            text_font: calendar_font_28
+        - obj:
+            id: calendar_list
+            x: 16
+            y: 104
+            width: 240
+            height: 620
+            pad_all: 0
+            border_width: 0
+            bg_color: 0xFFFFFF
+            bg_opa: COVER
+            scrollbar_mode: AUTO
+            layout:
+              type: flex
+              flex_flow: COLUMN
+              pad_row: 14
+            widgets:
+              - obj:
+                  id: event_0_block
+                  width: 100%
+                  height: SIZE_CONTENT
+                  pad_all: 0
+                  border_width: 0
+                  bg_color: 0xFFFFFF
+                  bg_opa: COVER
+                  text_color: 0x000000
+                  layout:
+                    type: flex
+                    flex_flow: COLUMN
+                    pad_row: 6
+                  widgets:
+                    - label:
+                        id: event_0_meta
+                        width: 100%
+                        height: SIZE_CONTENT
+                        bg_color: 0x000000
+                        bg_opa: COVER
+                        text_color: 0xFFFFFF
+                        pad_left: 6
+                        pad_right: 6
+                        pad_top: 5
+                        pad_bottom: 5
+                        long_mode: WRAP
+                        text: ""
+                        text_font: calendar_font_16
+                    - label:
+                        id: event_0_time
+                        width: 100%
+                        height: SIZE_CONTENT
+                        text_color: 0x000000
+                        text_opa: COVER
+                        bg_color: 0xFFFFFF
+                        bg_opa: COVER
+                        text: ""
+                        text_font: calendar_font_16
+                    - label:
+                        id: event_0_title
+                        text_color: 0x000000
+                        text_opa: COVER
+                        bg_color: 0xFFFFFF
+                        bg_opa: COVER
+                        width: 100%
+                        height: SIZE_CONTENT
+                        long_mode: WRAP
+                        text: "Kalender wird geladen..."
+                        text_font: calendar_font_24
+              - obj:
+                  id: event_1_block
+                  width: 100%
+                  height: SIZE_CONTENT
+                  pad_all: 0
+                  border_width: 0
+                  bg_color: 0xFFFFFF
+                  bg_opa: COVER
+                  text_color: 0x000000
+                  layout:
+                    type: flex
+                    flex_flow: COLUMN
+                    pad_row: 6
+                  widgets:
+                    - label:
+                        id: event_1_meta
+                        width: 100%
+                        height: SIZE_CONTENT
+                        bg_color: 0x000000
+                        bg_opa: COVER
+                        text_color: 0xFFFFFF
+                        pad_left: 6
+                        pad_right: 6
+                        pad_top: 5
+                        pad_bottom: 5
+                        long_mode: WRAP
+                        text: ""
+                        text_font: calendar_font_16
+                    - label:
+                        id: event_1_time
+                        width: 100%
+                        height: SIZE_CONTENT
+                        text_color: 0x000000
+                        text_opa: COVER
+                        bg_color: 0xFFFFFF
+                        bg_opa: COVER
+                        text: ""
+                        text_font: calendar_font_16
+                    - label:
+                        id: event_1_title
+                        text_color: 0x000000
+                        text_opa: COVER
+                        bg_color: 0xFFFFFF
+                        bg_opa: COVER
+                        width: 100%
+                        height: SIZE_CONTENT
+                        long_mode: WRAP
+                        text: ""
+                        text_font: calendar_font_24
+              - obj:
+                  id: event_2_block
+                  width: 100%
+                  height: SIZE_CONTENT
+                  pad_all: 0
+                  border_width: 0
+                  bg_color: 0xFFFFFF
+                  bg_opa: COVER
+                  text_color: 0x000000
+                  layout:
+                    type: flex
+                    flex_flow: COLUMN
+                    pad_row: 6
+                  widgets:
+                    - label:
+                        id: event_2_meta
+                        width: 100%
+                        height: SIZE_CONTENT
+                        bg_color: 0x000000
+                        bg_opa: COVER
+                        text_color: 0xFFFFFF
+                        pad_left: 6
+                        pad_right: 6
+                        pad_top: 5
+                        pad_bottom: 5
+                        long_mode: WRAP
+                        text: ""
+                        text_font: calendar_font_16
+                    - label:
+                        id: event_2_time
+                        width: 100%
+                        height: SIZE_CONTENT
+                        text_color: 0x000000
+                        text_opa: COVER
+                        bg_color: 0xFFFFFF
+                        bg_opa: COVER
+                        text: ""
+                        text_font: calendar_font_16
+                    - label:
+                        id: event_2_title
+                        text_color: 0x000000
+                        text_opa: COVER
+                        bg_color: 0xFFFFFF
+                        bg_opa: COVER
+                        width: 100%
+                        height: SIZE_CONTENT
+                        long_mode: WRAP
+                        text: ""
+                        text_font: calendar_font_24
+              - obj:
+                  id: event_3_block
+                  width: 100%
+                  height: SIZE_CONTENT
+                  pad_all: 0
+                  border_width: 0
+                  bg_color: 0xFFFFFF
+                  bg_opa: COVER
+                  text_color: 0x000000
+                  layout:
+                    type: flex
+                    flex_flow: COLUMN
+                    pad_row: 6
+                  widgets:
+                    - label:
+                        id: event_3_meta
+                        width: 100%
+                        height: SIZE_CONTENT
+                        bg_color: 0x000000
+                        bg_opa: COVER
+                        text_color: 0xFFFFFF
+                        pad_left: 6
+                        pad_right: 6
+                        pad_top: 5
+                        pad_bottom: 5
+                        long_mode: WRAP
+                        text: ""
+                        text_font: calendar_font_16
+                    - label:
+                        id: event_3_time
+                        width: 100%
+                        height: SIZE_CONTENT
+                        text_color: 0x000000
+                        text_opa: COVER
+                        bg_color: 0xFFFFFF
+                        bg_opa: COVER
+                        text: ""
+                        text_font: calendar_font_16
+                    - label:
+                        id: event_3_title
+                        text_color: 0x000000
+                        text_opa: COVER
+                        bg_color: 0xFFFFFF
+                        bg_opa: COVER
+                        width: 100%
+                        height: SIZE_CONTENT
+                        long_mode: WRAP
+                        text: ""
+                        text_font: calendar_font_24
+              - obj:
+                  id: event_4_block
+                  width: 100%
+                  height: SIZE_CONTENT
+                  pad_all: 0
+                  border_width: 0
+                  bg_color: 0xFFFFFF
+                  bg_opa: COVER
+                  text_color: 0x000000
+                  layout:
+                    type: flex
+                    flex_flow: COLUMN
+                    pad_row: 6
+                  widgets:
+                    - label:
+                        id: event_4_meta
+                        width: 100%
+                        height: SIZE_CONTENT
+                        bg_color: 0x000000
+                        bg_opa: COVER
+                        text_color: 0xFFFFFF
+                        pad_left: 6
+                        pad_right: 6
+                        pad_top: 5
+                        pad_bottom: 5
+                        long_mode: WRAP
+                        text: ""
+                        text_font: calendar_font_16
+                    - label:
+                        id: event_4_time
+                        width: 100%
+                        height: SIZE_CONTENT
+                        text_color: 0x000000
+                        text_opa: COVER
+                        bg_color: 0xFFFFFF
+                        bg_opa: COVER
+                        text: ""
+                        text_font: calendar_font_16
+                    - label:
+                        id: event_4_title
+                        text_color: 0x000000
+                        text_opa: COVER
+                        bg_color: 0xFFFFFF
+                        bg_opa: COVER
+                        width: 100%
+                        height: SIZE_CONTENT
+                        long_mode: WRAP
+                        text: ""
+                        text_font: calendar_font_24
+        - label:
+            id: calendar_updated
+            x: 16
+            y: 738
+            text: ""
+            text_font: calendar_font_14
+        - label:
+            align: BOTTOM_RIGHT
+            x: -16
+            y: -10
+            text: "1 / 2"
+            text_font: calendar_font_14
+
+    - id: page_2
+      bg_color: 0xFFFFFF
+      text_color: 0x000000
+      scrollbar_mode: "OFF"
+      widgets:
+        - label:
+            align: TOP_MID
+            y: 20
+            text: "RAUMKLIMA"
+            text_font: calendar_font_28
+        - obj:
+            id: room_1
+            x: 16
+            y: 110
+            width: 114
+            height: 184
+            pad_all: 0
+            radius: 0
+            border_width: 1
+            border_color: 0x000000
+            bg_color: 0xFFFFFF
+            bg_opa: COVER
+            scrollbar_mode: "OFF"
+            widgets:
+              - label:
+                  width: 100%
+                  height: 38
+                  text: "pixeledi"
+                  text_align: CENTER
+                  text_font: room_font_bold
+                  text_color: 0xFFFFFF
+                  bg_color: 0x000000
+                  bg_opa: COVER
+                  pad_top: 8
+              - label:
+                  id: room_1_temperature
+                  align: TOP_MID
+                  y: 59
+                  text: "--,- °C"
+                  text_font: calendar_font_28
+                  text_color: 0x000000
+              - label:
+                  id: room_1_humidity
+                  width: 102
+                  text_align: CENTER
+                  pad_top: 5
+                  pad_bottom: 5
+                  bg_color: 0xFFFFFF
+                  bg_opa: COVER
+                  align: TOP_MID
+                  y: 121
+                  text: "-- %"
+                  text_font: calendar_font_24
+                  text_color: 0x000000
+        - obj:
+            id: room_2
+            x: 16
+            y: 518
+            width: 114
+            height: 184
+            pad_all: 0
+            radius: 0
+            border_width: 1
+            border_color: 0x000000
+            bg_color: 0xFFFFFF
+            bg_opa: COVER
+            scrollbar_mode: "OFF"
+            widgets:
+              - label:
+                  width: 100%
+                  height: 38
+                  text: "Wohnen"
+                  text_align: CENTER
+                  text_font: room_font_bold
+                  text_color: 0xFFFFFF
+                  bg_color: 0x000000
+                  bg_opa: COVER
+                  pad_top: 8
+              - label:
+                  id: room_2_temperature
+                  align: TOP_MID
+                  y: 59
+                  text: "--,- °C"
+                  text_font: calendar_font_28
+                  text_color: 0x000000
+              - label:
+                  id: room_2_humidity
+                  width: 102
+                  text_align: CENTER
+                  pad_top: 5
+                  pad_bottom: 5
+                  bg_color: 0xFFFFFF
+                  bg_opa: COVER
+                  align: TOP_MID
+                  y: 121
+                  text: "-- %"
+                  text_font: calendar_font_24
+                  text_color: 0x000000
+        - obj:
+            id: room_3
+            x: 16
+            y: 314
+            width: 114
+            height: 184
+            pad_all: 0
+            radius: 0
+            border_width: 1
+            border_color: 0x000000
+            bg_color: 0xFFFFFF
+            bg_opa: COVER
+            scrollbar_mode: "OFF"
+            widgets:
+              - label:
+                  width: 100%
+                  height: 38
+                  text: "Tammy"
+                  text_align: CENTER
+                  text_font: room_font_bold
+                  text_color: 0xFFFFFF
+                  bg_color: 0x000000
+                  bg_opa: COVER
+                  pad_top: 8
+              - label:
+                  id: room_3_temperature
+                  align: TOP_MID
+                  y: 59
+                  text: "--,- °C"
+                  text_font: calendar_font_28
+                  text_color: 0x000000
+              - label:
+                  id: room_3_humidity
+                  width: 102
+                  text_align: CENTER
+                  pad_top: 5
+                  pad_bottom: 5
+                  bg_color: 0xFFFFFF
+                  bg_opa: COVER
+                  align: TOP_MID
+                  y: 121
+                  text: "-- %"
+                  text_font: calendar_font_24
+                  text_color: 0x000000
+        - obj:
+            id: room_4
+            x: 142
+            y: 314
+            width: 114
+            height: 184
+            pad_all: 0
+            radius: 0
+            border_width: 1
+            border_color: 0x000000
+            bg_color: 0xFFFFFF
+            bg_opa: COVER
+            scrollbar_mode: "OFF"
+            widgets:
+              - label:
+                  width: 100%
+                  height: 38
+                  text: "Schlafen"
+                  text_align: CENTER
+                  text_font: room_font_bold
+                  text_color: 0xFFFFFF
+                  bg_color: 0x000000
+                  bg_opa: COVER
+                  pad_top: 8
+              - label:
+                  id: room_4_temperature
+                  align: TOP_MID
+                  y: 59
+                  text: "--,- °C"
+                  text_font: calendar_font_28
+                  text_color: 0x000000
+              - label:
+                  id: room_4_humidity
+                  width: 102
+                  text_align: CENTER
+                  pad_top: 5
+                  pad_bottom: 5
+                  bg_color: 0xFFFFFF
+                  bg_opa: COVER
+                  align: TOP_MID
+                  y: 121
+                  text: "-- %"
+                  text_font: calendar_font_24
+                  text_color: 0x000000
+        - obj:
+            id: room_5
+            x: 142
+            y: 110
+            width: 114
+            height: 184
+            pad_all: 0
+            radius: 0
+            border_width: 1
+            border_color: 0x000000
+            bg_color: 0xFFFFFF
+            bg_opa: COVER
+            scrollbar_mode: "OFF"
+            widgets:
+              - label:
+                  width: 100%
+                  height: 38
+                  text: "Bad"
+                  text_align: CENTER
+                  text_font: room_font_bold
+                  text_color: 0xFFFFFF
+                  bg_color: 0x000000
+                  bg_opa: COVER
+                  pad_top: 8
+              - label:
+                  id: room_5_temperature
+                  align: TOP_MID
+                  y: 59
+                  text: "--,- °C"
+                  text_font: calendar_font_28
+                  text_color: 0x000000
+              - label:
+                  id: room_5_humidity
+                  width: 102
+                  text_align: CENTER
+                  pad_top: 5
+                  pad_bottom: 5
+                  bg_color: 0xFFFFFF
+                  bg_opa: COVER
+                  align: TOP_MID
+                  y: 121
+                  text: "-- %"
+                  text_font: calendar_font_24
+                  text_color: 0x000000
+        - obj:
+            id: room_6
+            x: 142
+            y: 518
+            width: 114
+            height: 184
+            pad_all: 0
+            radius: 0
+            border_width: 1
+            border_color: 0x000000
+            bg_color: 0xFFFFFF
+            bg_opa: COVER
+            scrollbar_mode: "OFF"
+            widgets:
+              - label:
+                  width: 100%
+                  height: 38
+                  text: "Garten"
+                  text_align: CENTER
+                  text_font: room_font_bold
+                  text_color: 0xFFFFFF
+                  bg_color: 0x000000
+                  bg_opa: COVER
+                  pad_top: 8
+              - label:
+                  id: room_6_temperature
+                  align: TOP_MID
+                  y: 59
+                  text: "--,- °C"
+                  text_font: calendar_font_28
+                  text_color: 0x000000
+              - label:
+                  id: room_6_humidity
+                  width: 102
+                  text_align: CENTER
+                  pad_top: 5
+                  pad_bottom: 5
+                  bg_color: 0xFFFFFF
+                  bg_opa: COVER
+                  align: TOP_MID
+                  y: 121
+                  text: "-- %"
+                  text_font: calendar_font_24
+                  text_color: 0x000000
+        - label:
+            x: 16
+            y: 738
+            id: room_updated
+            text: "Aktualisiert: --.--.---- --:--"
+            text_font: calendar_font_14
+        - label:
+            align: BOTTOM_RIGHT
+            x: -16
+            y: -10
+            text: "2 / 2"
+            text_font: calendar_font_14

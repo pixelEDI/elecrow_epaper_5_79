@@ -1,0 +1,8 @@
+# ESPHome-Build-Dateien und Zugangsdaten
+/.esphome/
+/secrets.yaml
+
+# Lokale ESPHome-Arbeitsdateien
+/.pioenvs/
+/.piolibdeps/
+/.clangd/
